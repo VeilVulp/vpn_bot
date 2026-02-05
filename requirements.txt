@@ -1,0 +1,13 @@
+python-dotenv
+sqlalchemy
+aiosqlite
+routeros_api
+pydantic-settings
+python-telegram-bot
+cryptography
+
+# Testing
+pytest
+pytest-asyncio
+pytest-mock
+pytest-cov

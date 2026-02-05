@@ -1,0 +1,44 @@
+📜 Live Logs (Press Ctrl+C to exit):
+
+Feb 03 20:26:14 test python3[5118]:   File "/opt/vpn_bot/main.py", line 83, in <module>
+Feb 03 20:26:14 test python3[5118]:     main()
+Feb 03 20:26:14 test python3[5118]:   File "/opt/vpn_bot/main.py", line 37, in main
+Feb 03 20:26:14 test python3[5118]:     logger.info("Starting VPN Bot...")
+Feb 03 20:26:14 test python3[5118]: NameError: name 'logger' is not defined
+Feb 03 20:26:15 test systemd[1]: vpn_bot.service: Main process exited, code=exited, status=1/FAILURE
+Feb 03 20:26:15 test systemd[1]: vpn_bot.service: Failed with result 'exit-code'.
+Feb 03 20:26:25 test systemd[1]: vpn_bot.service: Scheduled restart job, restart counter is at 38.
+Feb 03 20:26:25 test systemd[1]: Stopped VPN Telegram Bot Service.
+Feb 03 20:26:25 test systemd[1]: Started VPN Telegram Bot Service.
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/admin_panel.py:617: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   admin_settings_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/admin_panel.py:636: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   admin_search_user_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/admin_panel.py:816: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   admin_profile_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/admin_panel.py:876: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   admin_server_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/admin_panel.py:975: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   admin_backup_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/admin_panel.py:1069: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   admin_mgmt_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/admin_panel.py:1162: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   admin_notification_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/admin_settings.py:441: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   admin_settings_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/support_tickets.py:468: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   support_ticket_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/admin_tickets.py:257: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   admin_ticket_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/bot_handler.py:641: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   wallet_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: /opt/vpn_bot/bot_handler.py:662: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+Feb 03 20:26:25 test python3[5122]:   buy_handler = ConversationHandler(
+Feb 03 20:26:25 test python3[5122]: Traceback (most recent call last):
+Feb 03 20:26:25 test python3[5122]:   File "/opt/vpn_bot/main.py", line 83, in <module>
+Feb 03 20:26:25 test python3[5122]:     main()
+Feb 03 20:26:25 test python3[5122]:   File "/opt/vpn_bot/main.py", line 37, in main
+Feb 03 20:26:25 test python3[5122]:     logger.info("Starting VPN Bot...")
+Feb 03 20:26:25 test python3[5122]: NameError: name 'logger' is not defined
+Feb 03 20:26:26 test systemd[1]: vpn_bot.service: Main process exited, code=exited, status=1/FAILURE
+Feb 03 20:26:26 test systemd[1]: vpn_bot.service: Failed with result 'exit-code'.

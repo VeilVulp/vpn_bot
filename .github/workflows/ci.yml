@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vpnbot
+          POSTGRES_PASSWORD: vpnbot
+          POSTGRES_DB: vpnbot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://vpnbot:vpnbot@localhost:5432/vpnbot
+      ENCRYPTION_KEY: ci-test-encryption-key-32chars!!
+      DEBUG: "true"
+      BOT_TOKEN: "0000000000:CI_TOKEN_PLACEHOLDER"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Ruff
+        run: ruff check vpn_bot/
+
+      - name: Bandit
+        run: bandit -r vpn_bot/ -ll
+
+      - name: Security + DB tests
+        run: pytest tests/security tests/db -q --ignore=tests/live -x
+
+      - name: Admin offline tests
+        run: pytest tests/admin -q --ignore=tests/live -x
+
+      - name: Critical regression tests
+        run: |
+          pytest tests/test_wallet_receipt_atomic.py \
+            tests/test_discount_e2e.py \
+            tests/test_security_banned.py \
+            tests/db/test_wg_renewal_quota_reset.py \
+            -q --ignore=tests/live -x
+
+  load-nightly:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vpnbot
+          POSTGRES_PASSWORD: vpnbot
+          POSTGRES_DB: vpnbot
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql+asyncpg://vpnbot:vpnbot@localhost:5432/vpnbot
+      ENCRYPTION_KEY: ci-test-encryption-key-32chars!!
+      DEBUG: "true"
+      BOT_TOKEN: "0000000000:CI_TOKEN_PLACEHOLDER"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest tests/load -m load -q

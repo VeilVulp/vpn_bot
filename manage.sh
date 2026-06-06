@@ -20,7 +20,13 @@ WHITE='\033[1;37m'
 NC='\033[0m'
 
 # Configuration
-BOT_DIR=$(dirname "$(readlink -f "$0")")
+BOT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+if [ -f /etc/vpnbot/install.conf ]; then
+    _install_dir=$(grep -E '^INSTALL_DIR=' /etc/vpnbot/install.conf 2>/dev/null | cut -d= -f2- | tr -d '\r')
+    if [ -n "$_install_dir" ] && [ -d "$_install_dir" ]; then
+        BOT_DIR="$_install_dir"
+    fi
+fi
 SERVICE_NAME="vpn_bot"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 ENV_FILE="${BOT_DIR}/.env"
@@ -77,6 +83,9 @@ setup_virtualenv() {
     source "$VENV_DIR/bin/activate"
     pip install --upgrade pip > /dev/null 2>&1
     pip install -r "$BOT_DIR/requirements.txt" > /dev/null 2>&1
+    if [ -f "$BOT_DIR/pyproject.toml" ]; then
+        pip install -e "$BOT_DIR" > /dev/null 2>&1
+    fi
     echo -e "${GREEN}✅ Virtual environment ready.${NC}"
 }
 
@@ -127,6 +136,23 @@ configure_env() {
         return
     fi
     
+    # PostgreSQL Configuration
+    echo ""
+    echo -e "${YELLOW}PostgreSQL Database Configuration:${NC}"
+    read -p "  DB Host [localhost]: " PG_HOST
+    PG_HOST=${PG_HOST:-localhost}
+    read -p "  DB Port [5432]: " PG_PORT
+    PG_PORT=${PG_PORT:-5432}
+    read -p "  DB Name [vpnbot]: " PG_DBNAME
+    PG_DBNAME=${PG_DBNAME:-vpnbot}
+    read -p "  DB User [vpnbot]: " PG_USER
+    PG_USER=${PG_USER:-vpnbot}
+    read -sp "  DB Password [vpnbot]: " PG_PASS
+    PG_PASS=${PG_PASS:-vpnbot}
+    echo ""
+
+    DATABASE_URL="postgresql+asyncpg://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_DBNAME}"
+
     # Write .env file
     cat > "$ENV_FILE" << EOF
 # =====================================================
@@ -138,8 +164,8 @@ configure_env() {
 BOT_TOKEN=${BOT_TOKEN}
 ADMIN_IDS=${ADMIN_IDS}
 
-# --- DATABASE ---
-DATABASE_URL=sqlite+aiosqlite:///vpn_bot.db
+# --- DATABASE (PostgreSQL) ---
+DATABASE_URL=${DATABASE_URL}
 
 # --- MIKROTIK DEFAULTS (Optional - servers are managed via bot) ---
 MIKROTIK_HOST=
@@ -174,7 +200,7 @@ Type=simple
 User=root
 WorkingDirectory=${BOT_DIR}
 Environment="PATH=${VENV_DIR}/bin"
-ExecStart=${VENV_DIR}/bin/python3 ${BOT_DIR}/main.py
+ExecStart=${VENV_DIR}/bin/python3 -m vpn_bot
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -187,6 +213,50 @@ EOF
     systemctl daemon-reload
     systemctl enable $SERVICE_NAME > /dev/null 2>&1
     echo -e "${GREEN}✅ Systemd service configured.${NC}"
+}
+
+write_install_conf() {
+    mkdir -p /etc/vpnbot
+    echo "INSTALL_DIR=${BOT_DIR}" > /etc/vpnbot/install.conf
+    chmod 644 /etc/vpnbot/install.conf
+}
+
+install_vpnbot_command() {
+    cat > /usr/local/bin/vpnbot << EOF
+#!/bin/bash
+INSTALL_DIR=\$(grep -E '^INSTALL_DIR=' /etc/vpnbot/install.conf 2>/dev/null | cut -d= -f2- | tr -d '\r')
+INSTALL_DIR=\${INSTALL_DIR:-${BOT_DIR}}
+cd "\$INSTALL_DIR" && exec ./manage.sh "\$@"
+EOF
+    chmod +x /usr/local/bin/vpnbot 2>/dev/null || true
+}
+
+bootstrap_install() {
+    echo -e "${BLUE}Bootstrap: venv, systemd, auto-start on reboot...${NC}"
+    write_install_conf
+    setup_virtualenv
+    if [ ! -f "$ENV_FILE" ]; then
+        if [ "${SKIP_ENV_WIZARD:-0}" = "1" ] || [ "${INSTALL_NONINTERACTIVE:-0}" = "1" ]; then
+            if [ -f "$BOT_DIR/.env.example" ]; then
+                cp "$BOT_DIR/.env.example" "$ENV_FILE"
+                chmod 600 "$ENV_FILE"
+                echo -e "${YELLOW}Copied .env.example — edit ${ENV_FILE} before production use.${NC}"
+            else
+                echo -e "${RED}No .env — run: sudo vpnbot and configure the bot.${NC}"
+            fi
+        else
+            configure_env
+        fi
+    fi
+    setup_systemd
+    install_vpnbot_command
+    systemctl enable $SERVICE_NAME > /dev/null 2>&1
+    if [ -f "$ENV_FILE" ] && grep -q '^BOT_TOKEN=.\+' "$ENV_FILE" 2>/dev/null; then
+        systemctl restart $SERVICE_NAME 2>/dev/null || systemctl start $SERVICE_NAME
+        echo -e "${GREEN}Service enabled and started (vpn_bot).${NC}"
+    else
+        echo -e "${YELLOW}Service enabled; start after configuring .env: systemctl start vpn_bot${NC}"
+    fi
 }
 
 easy_install() {
@@ -215,13 +285,8 @@ easy_install() {
     setup_systemd
     echo ""
     
-    # Create global command
-    cat > /usr/local/bin/vpnbot << 'EOF2'
-#!/bin/bash
-cd /opt/vpn_bot 2>/dev/null || cd "$(dirname "$0")"
-sudo ./manage.sh
-EOF2
-    chmod +x /usr/local/bin/vpnbot 2>/dev/null || true
+    write_install_conf
+    install_vpnbot_command
     
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${GREEN}      ✨ INSTALLATION COMPLETE ✨${NC}"
@@ -305,14 +370,27 @@ edit_config() {
 # ADVANCED OPTIONS
 # =====================================================
 
+# Helper: extract DB params from .env DATABASE_URL
+get_pg_params() {
+    local DB_URL=$(grep '^DATABASE_URL=' "$ENV_FILE" | cut -d= -f2-)
+    # Strip driver prefix
+    DB_URL=$(echo "$DB_URL" | sed 's|postgresql+asyncpg://||; s|postgresql+psycopg2://||; s|postgresql://||')
+    PG_USER=$(echo "$DB_URL" | sed 's|:.*||')
+    PG_PASS=$(echo "$DB_URL" | sed 's|^[^:]*:||; s|@.*||')
+    PG_HOST=$(echo "$DB_URL" | sed 's|^.*@||; s|:.*||')
+    PG_PORT=$(echo "$DB_URL" | sed 's|^.*@[^:]*:||; s|/.*||')
+    PG_DBNAME=$(echo "$DB_URL" | sed 's|^.*/||')
+}
+
 rollback_update() {
     BACKUP_DIR="$1"
     
     echo -e "${YELLOW}🔄 Rolling back update...${NC}"
     
-    # Restore database
-    if [ -f "$BACKUP_DIR/vpn_bot.db" ]; then
-        cp "$BACKUP_DIR/vpn_bot.db" "$BOT_DIR/"
+    # Restore database from pg_dump
+    if [ -f "$BACKUP_DIR/vpn_bot_backup.sql" ]; then
+        get_pg_params
+        PGPASSWORD="$PG_PASS" pg_restore -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DBNAME" --clean --if-exists "$BACKUP_DIR/vpn_bot_backup.sql" 2>/dev/null
         echo -e "${GREEN}✅ Database restored${NC}"
     fi
     
@@ -357,10 +435,12 @@ update_bot() {
     BACKUP_DIR="$BOT_DIR/backups/update_$BACKUP_TIME"
     mkdir -p "$BACKUP_DIR"
     
-    # Backup database
-    if [ -f "$BOT_DIR/vpn_bot.db" ]; then
-        cp "$BOT_DIR/vpn_bot.db" "$BACKUP_DIR/"
-        echo -e "${GREEN}  ✅ Database backed up${NC}"
+    # Backup database via pg_dump
+    get_pg_params
+    if PGPASSWORD="$PG_PASS" pg_dump -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DBNAME" -F c -f "$BACKUP_DIR/vpn_bot_backup.sql" 2>/dev/null; then
+        echo -e "${GREEN}  ✅ Database backed up (pg_dump)${NC}"
+    else
+        echo -e "${YELLOW}  ⚠️  Database backup failed (pg_dump)${NC}"
     fi
     
     # Backup .env
@@ -422,9 +502,10 @@ update_bot() {
     # Check for database reset flag
     if [ -f "$BOT_DIR/.reset_database" ]; then
         echo -e "${YELLOW}  ⚠️  Database reset requested...${NC}"
-        rm -f "$BOT_DIR/vpn_bot.db"
+        get_pg_params
+        PGPASSWORD="$PG_PASS" psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DBNAME" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" 2>/dev/null
         rm -f "$BOT_DIR/.reset_database"
-        echo -e "${GREEN}  ✅ Database removed (will recreate on startup)${NC}"
+        echo -e "${GREEN}  ✅ Database reset (will recreate on startup)${NC}"
     else
         echo -e "${GREEN}  ✅ Database preserved${NC}"
     fi
@@ -465,14 +546,14 @@ backup_database() {
     echo -e "${BLUE}💾 Database Backup${NC}"
     echo ""
     
-    BACKUP_NAME="vpn_bot_backup_$(date +%Y%m%d_%H%M%S).db"
+    get_pg_params
+    BACKUP_NAME="vpn_bot_backup_$(date +%Y%m%d_%H%M%S).sql"
     BACKUP_PATH="$HOME/$BACKUP_NAME"
     
-    if [ -f "$BOT_DIR/vpn_bot.db" ]; then
-        cp "$BOT_DIR/vpn_bot.db" "$BACKUP_PATH"
+    if PGPASSWORD="$PG_PASS" pg_dump -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DBNAME" -F c -f "$BACKUP_PATH" 2>/dev/null; then
         echo -e "${GREEN}✅ Backup saved to: ${CYAN}${BACKUP_PATH}${NC}"
     else
-        echo -e "${YELLOW}⚠️  Database file not found.${NC}"
+        echo -e "${RED}❌ Backup failed. Check PostgreSQL connection.${NC}"
     fi
     pause
 }
@@ -482,7 +563,7 @@ restore_database() {
     echo -e "${BLUE}📥 Database Restore${NC}"
     echo ""
     
-    echo -e "${YELLOW}Enter path to backup file:${NC}"
+    echo -e "${YELLOW}Enter path to backup file (.sql):${NC}"
     read -p "📁 Path: " BACKUP_PATH
     
     if [ ! -f "$BACKUP_PATH" ]; then
@@ -503,18 +584,17 @@ restore_database() {
     # Stop bot
     systemctl stop $SERVICE_NAME
     
-    # Backup current
-    if [ -f "$BOT_DIR/vpn_bot.db" ]; then
-        mv "$BOT_DIR/vpn_bot.db" "$BOT_DIR/vpn_bot.db.old"
+    # Restore from pg_dump
+    get_pg_params
+    if PGPASSWORD="$PG_PASS" pg_restore -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DBNAME" --clean --if-exists "$BACKUP_PATH" 2>/dev/null; then
+        echo -e "${GREEN}✅ Database restored successfully!${NC}"
+    else
+        echo -e "${RED}❌ Restore failed. Check the backup file format.${NC}"
     fi
-    
-    # Restore
-    cp "$BACKUP_PATH" "$BOT_DIR/vpn_bot.db"
     
     # Restart
     systemctl start $SERVICE_NAME
     
-    echo -e "${GREEN}✅ Database restored successfully!${NC}"
     pause
 }
 
@@ -553,6 +633,43 @@ uninstall_bot() {
 }
 
 # =====================================================
+# TESTING
+# =====================================================
+
+run_live_tests() {
+    echo -e "${BLUE}🧪 Running live MikroTik + unit test suite...${NC}"
+    echo -e "${YELLOW}Requires .env.test with MIKROTIK_TEST_* and DATABASE_URL${NC}"
+    echo ""
+
+    if [ ! -d "$VENV_DIR" ]; then
+        setup_virtualenv
+    fi
+    source "$VENV_DIR/bin/activate"
+
+    if [ -f "$BOT_DIR/.env.test" ]; then
+        set -a
+        # shellcheck disable=SC1091
+        source "$BOT_DIR/.env.test"
+        set +a
+    else
+        echo -e "${YELLOW}⚠️  .env.test not found — using .env${NC}"
+        [ -f "$ENV_FILE" ] && source "$ENV_FILE"
+    fi
+
+    cd "$BOT_DIR"
+    pip install -q pytest pytest-asyncio 2>/dev/null || true
+    pytest tests/test_wallet_receipt_atomic.py tests/live/ tests/test_security_banned.py -v --tb=short
+    TEST_EXIT=$?
+    echo ""
+    if [ $TEST_EXIT -eq 0 ]; then
+        echo -e "${GREEN}✅ All tests passed.${NC}"
+    else
+        echo -e "${RED}❌ Some tests failed (exit $TEST_EXIT).${NC}"
+    fi
+    pause
+}
+
+# =====================================================
 # MENUS
 # =====================================================
 
@@ -567,9 +684,10 @@ advanced_menu() {
         echo -e "4) ${CYAN}🔐 Regenerate Encryption Key${NC}"
         echo -e "5) ${YELLOW}🗑  Reset Database (next update)${NC}"
         echo -e "6) ${RED}🗑  Uninstall Bot${NC}"
-        echo -e "7) ${WHITE}🔙 Back to Main Menu${NC}"
+        echo -e "7) ${GREEN}🧪 Run Live Tests (pytest)${NC}"
+        echo -e "8) ${WHITE}🔙 Back to Main Menu${NC}"
         echo ""
-        read -p "Select option [1-7]: " CHOICE
+        read -p "Select option [1-8]: " CHOICE
         
         case $CHOICE in
             1) update_bot ;;
@@ -599,7 +717,8 @@ advanced_menu() {
                 pause
                 ;;
             6) uninstall_bot ;;
-            7) return ;;
+            7) run_live_tests ;;
+            8) return ;;
             *) echo -e "${RED}Invalid option!${NC}"; sleep 1 ;;
         esac
     done
@@ -644,6 +763,11 @@ main_menu() {
 
 check_root
 cd "$BOT_DIR"
+
+if [ "${1:-}" = "--bootstrap" ]; then
+    bootstrap_install
+    exit 0
+fi
 
 # Check if first run
 if [ ! -f "$ENV_FILE" ] || [ ! -f "$SERVICE_FILE" ]; then

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vpn-bot"
+version = "2.0.0"
+description = "Telegram VPN bot with MikroTik integration"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+vpn-bot = "vpn_bot.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vpn_bot*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "live_mt: tests that require a real MikroTik router",
+    "db: database integrity tests",
+    "load: concurrency / load tests",
+    "chaos_live: live concurrent chaos tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

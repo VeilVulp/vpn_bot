@@ -45,7 +45,7 @@
 
 ## 🌟 Introduction
 
-The **VPN Management Bot** is a production-ready, fully asynchronous Telegram bot for selling and managing VPN services. Built with Python 3.12+ and integrated directly with **MikroTik RouterOS User Manager v7**, it automates the entire VPN subscription lifecycle:
+The **VPN Management Bot** is a fully asynchronous Telegram bot for selling and managing VPN services. Built with Python 3.12+ and integrated directly with **MikroTik RouterOS User Manager v7**, it automates the entire VPN subscription lifecycle:
 
 - ✅ User registration and profile management
 - ✅ Wallet-based payment system with receipt verification
@@ -93,30 +93,22 @@ The **VPN Management Bot** is a production-ready, fully asynchronous Telegram bo
 ## 🏗️ Architecture
 
 ```
-vpn_bot/
-├── main.py                 # Application entry point
-├── config.py               # Environment configuration
-├── database.py             # Async SQLAlchemy setup
-├── models.py               # Database models (User, Server, Subscription, etc.)
-├── bot_handler.py          # User-facing bot handlers
-├── admin_panel.py          # Admin panel handlers
-├── admin_settings.py       # Admin settings management
-├── admin_management.py     # Admin user management
-├── admin_tickets.py        # Admin ticket handling
-├── support_tickets.py      # User ticket system
-├── mikrotik_manager.py     # MikroTik API integration
-├── wallet_manager.py       # Wallet operations
-├── backup_manager.py       # Database backup system
-├── notification_manager.py # Broadcast notifications
-├── utils.py                # Utility functions and logging
-├── requirements.txt        # Python dependencies
-├── install.sh              # Quick installation script
-├── manage.sh               # Management CLI
-└── tests/                  # Test suite
-    ├── conftest.py
-    ├── test_database_models.py
-    ├── test_mikrotik_connection.py
-    └── test_wallet_manager.py
+vpn_bot/                    # Repository root (deploy / git clone target)
+├── vpn_bot/                # Python application package
+│   ├── __main__.py         # python -m vpn_bot
+│   ├── main.py, config.py, database.py, models.py
+│   ├── bot_handler.py, user_features.py, wallet_manager.py
+│   ├── admin_panel.py, admin_*.py (services)
+│   └── mikrotik_manager.py, sync_manager.py, …
+├── locales/                # en.json, fa.json
+├── tests/                  # All automated tests
+├── scripts/                # Ops scripts (purge, plans, encryption)
+├── docs/                   # PERFORMANCE, ADMIN_PANEL_QA, …
+├── deploy/                 # systemd template, FTP deploy guide
+├── main.py                 # Thin wrapper → vpn_bot.main
+├── install.sh, manage.sh
+├── pyproject.toml, requirements.txt
+└── .env.example
 ```
 
 ---
@@ -130,33 +122,61 @@ bash <(curl -sL https://raw.githubusercontent.com/VeilVulp/vpn_bot/main/install.
 ```
 
 This will:
-1. Install Python 3, Git, and dependencies
-2. Clone the repository to `/opt/vpn_bot`
-3. Create Python virtual environment
-4. Guide you through configuration
-5. Setup systemd service
-6. Create global `vpnbot` command
+1. Install system dependencies and PostgreSQL (optional `--skip-db`)
+2. Clone to `/opt/vpn_bot` **or** use the current directory (FTP upload)
+3. `pip install -e .` in a virtualenv
+4. Register systemd `vpn_bot` (enabled on boot, `Restart=always`)
+5. Create global `vpnbot` command
 
-### Manual Installation
+See [deploy/README-deploy.md](deploy/README-deploy.md) for FTP file list.
+
+### Install from FTP (any path)
 
 ```bash
-# Clone repository
+cd /path/where/you/uploaded/vpn_bot
+sudo bash install.sh
+sudo vpnbot
+```
+
+### Manual Installation (development)
+
+```bash
 git clone https://github.com/VeilVulp/vpn_bot.git
 cd vpn_bot
-
-# Create virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Configure
+pip install -e .
 cp .env.example .env
 nano .env
+python3 -m vpn_bot
+```
 
-# Run
-python3 main.py
+### Commercial deployment
+
+Before serving paying customers, complete the [Commercial deployment checklist](deploy/COMMERCIAL_CHECKLIST.md) and read the [Operations runbook](docs/OPERATIONS.md).
+
+Key production settings:
+
+| Variable | Purpose |
+|----------|---------|
+| `REDIS_URL` | Required for multi-instance rate limiting |
+| `MIKROTIK_SSL_VERIFY` | Keep `true` when using API-SSL (443/8729) |
+| `SENTRY_DSN` | Optional exception alerting |
+| `ENCRYPTION_KEY` | Must remain stable; back up securely |
+
+Health check for cron/monitoring:
+
+```bash
+python3 scripts/health_check.py
+```
+
+### Service on Linux
+
+```bash
+sudo ./manage.sh --bootstrap   # after .env exists
+systemctl status vpn_bot
+journalctl -u vpn_bot -f
 ```
 
 ### Management Commands

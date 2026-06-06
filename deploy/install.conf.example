@@ -1,0 +1,2 @@
+# Written by install.sh — used by vpnbot and manage.sh
+INSTALL_DIR=/opt/vpn_bot

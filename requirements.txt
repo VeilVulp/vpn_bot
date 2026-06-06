@@ -1,13 +1,24 @@
 python-dotenv
-sqlalchemy
-aiosqlite
+sqlalchemy[asyncio]>=2.0
+greenlet>=3.0
+asyncpg
+psycopg2-binary
 routeros_api
 pydantic-settings
 python-telegram-bot
 cryptography
+qrcode[pil]>=7.4
+
+# Optional: distributed rate limiting (falls back to in-memory when unset)
+redis>=5.0
+
+# Optional: error monitoring (enable via SENTRY_DSN in .env)
+# sentry-sdk>=2.0
 
 # Testing
 pytest
 pytest-asyncio
 pytest-mock
 pytest-cov
+ruff
+bandit

@@ -1,5 +1,7 @@
 # Environment variables
 .env
+.env.test
+.env.mikrotik.local
 
 # Database
 *.db
@@ -29,3 +31,14 @@ Thumbs.db
 
 # Helper scripts
 gitpublisher.py
+
+# IDE / local
+.idea/
+.vscode/
+reports/
+*.sql
+backup_*.sql
+.env.mikrotik.local
+MetroNet-TCP.ovpn
+.gemini/
+integration_test_report.md

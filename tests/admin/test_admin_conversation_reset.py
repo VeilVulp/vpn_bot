@@ -65,10 +65,25 @@ async def test_admin_exit_to_menu_clears_and_returns_end():
     update = MagicMock()
     update.effective_message = None
     update.callback_query = None
+    update.effective_chat = MagicMock()
+    update.effective_chat.id = 12345
+    update.effective_chat.type = "private"
     context = MagicMock()
     context.user_data = {"target_user": "u1"}
 
-    with patch("vpn_bot.admin_panel.admin_start", new_callable=AsyncMock) as mock_start:
+    with (
+        patch(
+            "vpn_bot.admin_permissions.require_admin_message",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+        patch(
+            "vpn_bot.admin_permissions.resolve_group_admin_scope",
+            new_callable=AsyncMock,
+            return_value="private",
+        ),
+        patch("vpn_bot.admin_panel.admin_start", new_callable=AsyncMock) as mock_start,
+    ):
         result = await admin_exit_to_menu(update, context)
 
     assert result == ConversationHandler.END

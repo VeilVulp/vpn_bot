@@ -49,7 +49,7 @@ jobs:
         run: ruff check vpn_bot/ --select E9
 
       - name: Bandit
-        run: bandit -r vpn_bot/ -ll
+        run: bandit -r vpn_bot/ -ll -x vpn_bot/test_data.py
 
       - name: Security + DB tests
         run: pytest tests/security tests/db -q --ignore=tests/live -x

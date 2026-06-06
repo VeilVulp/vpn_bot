@@ -113,7 +113,7 @@ async def list_purchasable_ovpn_profiles():
             return []
         result = await session.execute(
             select(Profile).where(
-                Profile.is_active == True,
+                Profile.is_active,
                 Profile.server_id.in_(prod_ids),
             )
         )
@@ -133,7 +133,7 @@ async def list_purchasable_wg_profiles():
             return []
         result = await session.execute(
             select(WireGuardProfile).where(
-                WireGuardProfile.is_active == True,
+                WireGuardProfile.is_active,
                 WireGuardProfile.server_id.in_(prod_ids),
             )
         )

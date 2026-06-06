@@ -1,9 +1,8 @@
-from sqlalchemy import select, update, insert
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from vpn_bot.models import User, Transaction, PaymentReceipt
 from vpn_bot.database import AsyncSessionLocal
 from vpn_bot.utils import logger, LanguageManager, get_currency_unit
-from datetime import datetime
 
 class WalletManager:
     @staticmethod

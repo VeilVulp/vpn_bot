@@ -13,13 +13,13 @@ from telegram.ext import ContextTypes, ConversationHandler
 from telegram.helpers import escape_markdown
 from sqlalchemy import select, desc, asc, update
 from sqlalchemy.orm import joinedload
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from vpn_bot.database import AsyncSessionLocal
-from vpn_bot.models import User, Subscription, Profile, Transaction, Server, WireGuardSubscription, WireGuardProfile, OvpnConfig, PaymentReceipt, DiscountCode
+from vpn_bot.models import User, Subscription, Profile, Transaction, Server, WireGuardSubscription, OvpnConfig, PaymentReceipt, DiscountCode
 from vpn_bot.wallet_manager import WalletManager
 from vpn_bot.settings_utils import get_admin_setting
-from vpn_bot.mikrotik_manager import MikroTikManager, get_mikrotik_manager
+from vpn_bot.mikrotik_manager import get_mikrotik_manager
 from vpn_bot.utils import (
     logger,
     LanguageManager,
@@ -32,7 +32,8 @@ from vpn_bot.utils import (
     to_base36,
     generate_wg_keys,
 )
-import random, string, time
+import random
+import string
 import re
 from dataclasses import dataclass
 
@@ -1497,8 +1498,8 @@ async def finalize_wg_purchase(user_id: int, profile_id: int, context, is_tg_id:
         return False
 
     async with AsyncSessionLocal() as session:
-        from vpn_bot.models import WireGuardProfile, WireGuardSubscription, WireGuardInterface, Server, Transaction
-        from datetime import datetime, timedelta
+        from vpn_bot.models import WireGuardProfile, WireGuardSubscription, WireGuardInterface, Server
+        from datetime import timedelta
         
         p_res = await session.execute(select(WireGuardProfile).where(WireGuardProfile.id == profile_id))
         profile = p_res.scalars().first()
@@ -1585,7 +1586,7 @@ async def finalize_wg_purchase(user_id: int, profile_id: int, context, is_tg_id:
         server_id = profile.server_id
         server = await session.get(Server, server_id) if server_id else None
         if not server:
-            s_res = await session.execute(select(Server).where(Server.is_active == True))
+            s_res = await session.execute(select(Server).where(Server.is_active))
             server = s_res.scalars().first()
             if not server: return False
             server_id = server.id
@@ -1619,7 +1620,7 @@ async def finalize_wg_purchase(user_id: int, profile_id: int, context, is_tg_id:
             parent_res = await session.execute(
                 select(WireGuardInterface).where(
                     WireGuardInterface.server_id == server_id,
-                    WireGuardInterface.is_active == True
+                    WireGuardInterface.is_active
                 ).order_by(WireGuardInterface.id.asc()).limit(1)
             )
             parent = parent_res.scalars().first()
@@ -1780,7 +1781,6 @@ async def send_ovpn_file(bot, chat_id, subscription: Subscription, ovpn: OvpnCon
     username = subscription.mikrotik_username
     password = subscription.mikrotik_password
     
-    from io import BytesIO
     f_data = ovpn.config_content.encode('utf-8')
     doc = BytesIO(f_data)
     doc.name = ovpn.filename

@@ -62,7 +62,6 @@ from vpn_bot.bot_handler import (
     set_receipt_group,
     wallet_handler,
 )
-from vpn_bot.config import config
 from vpn_bot.support_tickets import set_support_group, support_ticket_handler
 from vpn_bot.utils import LanguageManager
 

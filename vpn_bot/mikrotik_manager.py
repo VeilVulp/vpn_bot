@@ -2,7 +2,7 @@ import os
 import routeros_api
 import threading
 import time
-from typing import Optional, Dict, Any, List, Union, Callable
+from typing import Optional, Dict, Any, List, Callable
 from datetime import datetime, timedelta
 from vpn_bot.config import config
 from vpn_bot.utils import logger
@@ -383,7 +383,6 @@ class MikroTikManager:
         RouterOS v7 UM accepts the expire field in ISO-like format
         ``YYYY-MM-DD HH:MM:SS``.
         """
-        from datetime import datetime as _datetime
         try:
             user_api = self._get_resource('/user-manager/user')
             users = user_api.get(name=username)
@@ -402,7 +401,7 @@ class MikroTikManager:
         Prefer ``set_user_expiry`` (which stacks from the current DB expiry)
         when the new absolute expiry is already known in the DB layer.
         """
-        from datetime import datetime as _datetime, timedelta, timezone
+        from datetime import datetime as _datetime, timezone
         try:
             now = _datetime.now(timezone.utc)
             new_expiry = now + timedelta(days=additional_days)
@@ -524,7 +523,7 @@ class MikroTikManager:
                         logger.info(f"Created WireGuard interface {name} on port {current_port}")
                         break
                     except Exception as e:
-                        err_str = str(e).lower()
+                        str(e).lower()
                         # If the error is likely due to port collision or generic failure to add, retry
                         logger.warning(f"Failed to create WG {name} on port {current_port} (attempt {attempt+1}): {e}. Trying next port.")
                         current_port += 1

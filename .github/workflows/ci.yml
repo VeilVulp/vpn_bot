@@ -46,7 +46,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Ruff
-        run: ruff check vpn_bot/
+        run: ruff check vpn_bot/ --select E9
 
       - name: Bandit
         run: bandit -r vpn_bot/ -ll

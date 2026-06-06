@@ -5,7 +5,9 @@ from vpn_bot.admin_cleanup_service import (
     clean_pending_receipts_service, clean_old_transactions_service,
     clean_closed_tickets_service, clean_inactive_users_service
 )
-from vpn_bot.settings_utils import get_admin_setting, set_admin_setting
+from sqlalchemy import select
+
+from vpn_bot.settings_utils import get_admin_setting
 from vpn_bot.utils import LanguageManager, db_maintenance_lock
 from vpn_bot.database import AsyncSessionLocal
 from vpn_bot.models import Server, Subscription, WireGuardSubscription, WireGuardInterface
@@ -57,7 +59,7 @@ class AdminCleanup:
                 res = await session.execute(
                     select(Subscription).where(
                         and_(Subscription.expiry_date < threshold,
-                             Subscription.deletion_warning_sent_at == None)
+                             Subscription.deletion_warning_sent_at is None)
                     )
                 )
                 to_warn = res.scalars().all()
@@ -119,7 +121,7 @@ class AdminCleanup:
                 res = await session.execute(
                     select(WireGuardSubscription).where(
                         and_(WireGuardSubscription.expiry_date < threshold,
-                             WireGuardSubscription.deletion_warning_sent_at == None)
+                             WireGuardSubscription.deletion_warning_sent_at is None)
                     )
                 )
                 to_warn = res.scalars().all()
@@ -177,7 +179,7 @@ class AdminCleanup:
         
         count = 0
         async with AsyncSessionLocal() as session:
-            res = await session.execute(select(Server).where(Server.is_active == True))
+            res = await session.execute(select(Server).where(Server.is_active))
             servers = res.scalars().all()
             
             for server in servers:
@@ -239,7 +241,7 @@ class AdminCleanup:
         """Clear stale/phantom sessions from User Manager on all servers."""
         count = 0
         async with AsyncSessionLocal() as session:
-            res = await session.execute(select(Server).where(Server.is_active == True))
+            res = await session.execute(select(Server).where(Server.is_active))
             servers = res.scalars().all()
             
             for server in servers:

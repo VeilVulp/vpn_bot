@@ -3,10 +3,8 @@ Admin Sales Management Module
 Handles global/protocol sales toggles, capacity limits, and custom block messages.
 """
 
-import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler, MessageHandler, filters, CommandHandler
-from sqlalchemy import select, func
+from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler, MessageHandler, filters
 
 from vpn_bot.settings_utils import get_admin_setting, set_admin_setting
 from vpn_bot.admin_sales_service import (

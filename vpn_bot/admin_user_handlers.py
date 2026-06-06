@@ -5,12 +5,11 @@ from __future__ import annotations
 import logging
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, CallbackQueryHandler, MessageHandler, filters
+from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler, MessageHandler, filters
 
 from vpn_bot.admin_audit import audit_log
 from vpn_bot.admin_user_service import (
     find_users_by_query, get_recent_users, format_user_pick_label,
-    get_user_comprehensive_info, format_user_info_text, build_user_hub_keyboard,
     get_user_transactions, get_user_receipts_summary,
     update_user_balance, toggle_user_ban, delete_user_full,
 )
@@ -27,13 +26,13 @@ from vpn_bot.admin_wg_service import (
     format_wg_subscription_info_text,
 )
 from vpn_bot.admin_shared_service import get_user_shared_count_from_mt, set_user_shared_count_on_mt
-from vpn_bot.utils import LanguageManager, format_currency, safe_response
+from vpn_bot.utils import LanguageManager, format_currency
 
 from vpn_bot.bot_handler import MENU_BUTTONS_FILTER
 from vpn_bot.admin_panel_shared import (
     SEARCH_USERNAME, USER_ACTION, RESET_PASS, ADD_DATA, EXTEND_TIME, DELETE_CONFIRM, EDIT_BALANCE,
     USER_NOTIFY_MSG, WG_EXTEND, WG_ADD_DATA, PICK_USER, USER_SHARED,
-    admin_conversation_fallbacks, universal_reply, show_user_hub, _with_conv_cancel,
+    admin_conversation_fallbacks, show_user_hub, _with_conv_cancel,
     _admin_start_back_handler,
 )
 

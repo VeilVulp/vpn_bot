@@ -56,7 +56,7 @@ async def pick_wg_interface_for_purchase(session, server_id: int):
         select(WireGuardInterface.id)
         .where(
             WireGuardInterface.server_id == server_id,
-            WireGuardInterface.is_active == True,
+            WireGuardInterface.is_active,
         )
         .with_for_update()
     )
@@ -64,7 +64,7 @@ async def pick_wg_interface_for_purchase(session, server_id: int):
         select(WireGuardInterface)
         .where(
             WireGuardInterface.server_id == server_id,
-            WireGuardInterface.is_active == True,
+            WireGuardInterface.is_active,
         )
         .order_by(WireGuardInterface.id.asc())
     )
@@ -105,7 +105,7 @@ async def get_all_wg_profiles():
 
     async with AsyncSessionLocal() as session:
         result = await session.execute(
-            select(WireGuardProfile).where(WireGuardProfile.is_active == True)
+            select(WireGuardProfile).where(WireGuardProfile.is_active)
         )
         rows = result.scalars().all()
     return [p for p in rows if not is_test_profile_name(p.name)]
@@ -136,7 +136,6 @@ async def create_wg_profile(data: dict):
 
 async def update_wg_profile(profile_id: int, data: dict):
     """Update an existing WG profile."""
-    from sqlalchemy.orm import joinedload
     async with AsyncSessionLocal() as session:
         prof = await session.get(WireGuardProfile, profile_id)
         if not prof: return False
@@ -242,7 +241,7 @@ async def sync_wg_interfaces_from_router(server_id: int) -> int:
                 select(WireGuardInterface)
                 .where(
                     WireGuardInterface.server_id == server_id,
-                    WireGuardInterface.is_active == True,
+                    WireGuardInterface.is_active,
                 )
                 .order_by(WireGuardInterface.id.asc())
                 .limit(1)
@@ -416,12 +415,10 @@ async def update_wg_interface(interface_id: int, data: dict):
         mgr = get_mikrotik_manager(server)
         
         # 1. Router Update if needed
-        router_update_needed = False
         if 'listen_port' in data:
             success = await asyncio.to_thread(mgr.update_wg_interface_port, interface.name, data['listen_port'])
             if not success: return False, "Failed to update port on router"
             interface.listen_port = data['listen_port']
-            router_update_needed = True
 
         # 2. DB updates
         if 'dns' in data: interface.dns = data['dns']
@@ -474,7 +471,6 @@ async def get_wg_subscription_comprehensive_info(query_text: str):
 
 async def format_wg_subscription_info_text(wg_sub, mt_data):
     """Format WG subscription details for admin display."""
-    from telegram.helpers import escape_markdown
 
     from vpn_bot.utils import LanguageManager, format_datetime
 
@@ -655,7 +651,6 @@ async def get_wg_interface_details(interface_id: int):
 async def broadcast_interface_update(interface_id: int, bot, custom_msg: str = None):
     """Broadcast WG update to all active users on an interface."""
     from sqlalchemy.orm import joinedload
-    from telegram.helpers import escape_markdown
     
     async with AsyncSessionLocal() as session:
         res = await session.execute(
@@ -700,7 +695,6 @@ async def broadcast_interface_update(interface_id: int, bot, custom_msg: str = N
 async def migrate_wg_interface_logic(source_id: int, target_data: dict):
     """Robust migration logic: move peers using batch migration and subnet remapping."""
     from vpn_bot.mikrotik_manager import get_mikrotik_manager
-    from sqlalchemy.orm import joinedload
     
     async with AsyncSessionLocal() as session:
         source = await session.get(WireGuardInterface, source_id)
@@ -1060,7 +1054,6 @@ async def check_and_preemptively_create_interfaces():
     """
     from vpn_bot.mikrotik_manager import get_mikrotik_manager
     from vpn_bot.admin_settings import get_admin_setting
-    from sqlalchemy import func as sql_func
     
     threshold = int(await get_admin_setting('wg_preemptive_threshold', 5))
     created = []
@@ -1068,7 +1061,7 @@ async def check_and_preemptively_create_interfaces():
     async with AsyncSessionLocal() as session:
         # Get all active servers that have WG interfaces
         ifaces_res = await session.execute(
-            select(WireGuardInterface).where(WireGuardInterface.is_active == True)
+            select(WireGuardInterface).where(WireGuardInterface.is_active)
         )
         all_ifaces = ifaces_res.scalars().all()
         

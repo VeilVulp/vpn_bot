@@ -1,6 +1,5 @@
 
 import asyncio
-from datetime import datetime
 
 from sqlalchemy import select, func as sa_func, or_, desc
 from sqlalchemy.orm import joinedload
@@ -11,7 +10,7 @@ from vpn_bot.models import (
     User, Subscription, WireGuardSubscription, Ticket, Server, Transaction, PaymentReceipt,
 )
 from vpn_bot.mikrotik_manager import get_mikrotik_manager
-from vpn_bot.utils import LanguageManager, format_currency, format_datetime, logger
+from vpn_bot.utils import LanguageManager, format_currency, format_datetime
 from telegram.helpers import escape_markdown
 
 SUBS_PAGE_SIZE = 5

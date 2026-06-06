@@ -18,7 +18,7 @@ from vpn_bot.admin_settings_service import (
 )
 from vpn_bot.database import AsyncSessionLocal
 from vpn_bot.models import User
-from vpn_bot.utils import LanguageManager, send_localized_text
+from vpn_bot.utils import LanguageManager
 
 TERMS_ACCEPT = 45
 TERMS_SESSION_KEY = "terms_accepted_session"

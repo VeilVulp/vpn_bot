@@ -4,7 +4,6 @@ import sys
 from logging.handlers import RotatingFileHandler
 from telegram import Update
 from urllib.parse import quote
-from telegram.helpers import escape_markdown
 
 def setup_logger(name: str = "vpn_bot", log_file: str = "bot.log", level: int = logging.INFO) -> logging.Logger:
     """
@@ -361,7 +360,6 @@ def safe_response(func):
 # --- Security: Input Validation ---
 import re
 import json
-import os
 
 async def check_maintenance_status(server_id: int = None, interface_id: int = None) -> tuple[bool, str | None]:
     """
@@ -369,7 +367,6 @@ async def check_maintenance_status(server_id: int = None, interface_id: int = No
     Returns: (is_blocked: bool, message: str or None)
     """
     from vpn_bot.database import AsyncSessionLocal
-    from sqlalchemy import select
     from vpn_bot.admin_settings import get_admin_setting
     from vpn_bot.models import Server, WireGuardInterface
     

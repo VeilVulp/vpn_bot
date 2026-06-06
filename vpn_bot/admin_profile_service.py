@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from vpn_bot.database import AsyncSessionLocal
-from vpn_bot.models import Profile, Server, Subscription
+from vpn_bot.models import Profile, Server
 from vpn_bot.utils import logger
 from vpn_bot.mikrotik_manager import get_mikrotik_manager
 import asyncio
@@ -8,7 +8,7 @@ import asyncio
 async def get_all_profiles():
     """Fetch all active profiles."""
     async with AsyncSessionLocal() as session:
-        result = await session.execute(select(Profile).where(Profile.is_active == True))
+        result = await session.execute(select(Profile).where(Profile.is_active))
         return result.scalars().all()
 
 async def get_profile_by_id(profile_id: int):

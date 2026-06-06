@@ -10,7 +10,7 @@ from vpn_bot.admin_settings_service import (
     set_wallet_custom_max,
     get_ticket_subjects, add_ticket_subject, delete_ticket_subject, reset_ticket_subjects,
     get_server_connection_info, update_server_connection_info,
-    get_custom_message, set_custom_message,
+    set_custom_message,
     is_purchase_terms_enabled,
     set_purchase_terms_enabled,
     get_purchase_terms_mode,
@@ -30,7 +30,6 @@ from vpn_bot.conversation_controls import (
     conv_markup,
     is_conv_cancel,
     is_conv_skip,
-    legacy_cancel_handlers,
     merge_markup,
     reply_conv_prompt,
 )

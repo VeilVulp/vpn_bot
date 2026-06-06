@@ -9,7 +9,6 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 from vpn_bot.database import AsyncSessionLocal
 from vpn_bot.discount_service import (
-    COUPON_SESSION_TTL_SECONDS,
     active_coupon_from_session,
     check_preview_rate_limit,
     record_preview_failure,
@@ -172,7 +171,7 @@ async def receive_coupon_code(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     code_str = (update.message.text or "").strip()
     scope = context.user_data.get("_coupon_scope", "buy_ovpn")
-    ctx = SCOPE_TO_CONTEXT.get(scope, "purchase_ovpn")
+    SCOPE_TO_CONTEXT.get(scope, "purchase_ovpn")
     user = update.effective_user
 
     async with AsyncSessionLocal() as session:
@@ -214,7 +213,7 @@ async def receive_coupon_code(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def _resume_after_coupon(update: Update, context: ContextTypes.DEFAULT_TYPE):
     resume = context.user_data.pop("_coupon_resume", None)
-    scope = context.user_data.get("_coupon_scope")
+    context.user_data.get("_coupon_scope")
 
     if resume == "buy_service_plans":
         from vpn_bot.bot_handler import buy_service_show_plans

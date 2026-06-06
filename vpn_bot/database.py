@@ -232,7 +232,6 @@ async def _migrate_reporting_indexes(conn):
 
 async def init_db():
     """Initialize database tables."""
-    import vpn_bot.models as models  # Ensure all models are loaded
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

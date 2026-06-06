@@ -17,9 +17,9 @@ from vpn_bot.admin_receipt_service import (
 )
 from vpn_bot.config import config
 from vpn_bot.settings_utils import get_admin_setting
-from vpn_bot.utils import LanguageManager, format_currency, safe_response
-
+from vpn_bot.utils import LanguageManager, format_currency, format_datetime, safe_response
 from vpn_bot.admin_panel_shared import universal_reply
+
 
 logger = logging.getLogger("vpn_bot.admin")
 
@@ -515,7 +515,7 @@ async def confirm_receipt_action(update: Update, context: ContextTypes.DEFAULT_T
                              user_obj.telegram_id, receipt.plan_id, coupon_id=coupon_id
                          )
                          if success_sub:
-                             await context.bot.send_message(update.effective_chat.id, f"✅ Plan delivered to user.", parse_mode='Markdown')
+                             await context.bot.send_message(update.effective_chat.id, "✅ Plan delivered to user.", parse_mode='Markdown')
                              # Send config logic is handled inside checkout? No, checkout returns sub.
                              # We need to trigger delivery delivery messaging here like in bot_handler?
                              # For now, let's at least confirm success to admin.

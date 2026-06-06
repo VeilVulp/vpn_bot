@@ -1,8 +1,8 @@
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func
 from vpn_bot.database import AsyncSessionLocal
 from vpn_bot.models import User, Subscription, Transaction, WireGuardSubscription
-from datetime import datetime, timedelta
+from datetime import datetime
 
 async def get_revenue_stats(start_date: datetime = None):
     """Fetch sum of purchase amounts grouped by currency."""

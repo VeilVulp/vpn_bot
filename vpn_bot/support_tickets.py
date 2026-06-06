@@ -6,12 +6,8 @@ Handles user support requests and admin responses.
 import logging
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
-from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, CallbackQueryHandler, MessageHandler, filters
-from sqlalchemy import select, desc, and_
-from datetime import datetime
+from telegram.ext import ContextTypes, ConversationHandler, CallbackQueryHandler, MessageHandler, filters
 
-from vpn_bot.models import User, Ticket, TicketMessage, AdminSetting
-from vpn_bot.config import config
 from vpn_bot.utils import LanguageManager, rate_limit, safe_response
 from vpn_bot.bot_handler import MENU_BUTTONS_FILTER, main_menu_text_dispatch, REG_NAME, REG_PHONE, receive_name, receive_phone, receive_phone_manual_warning
 from vpn_bot.conversation_controls import (
@@ -20,7 +16,6 @@ from vpn_bot.conversation_controls import (
     conv_markup,
     is_conv_cancel,
     legacy_cancel_handlers,
-    merge_markup,
     reply_conv_prompt,
 )
 

@@ -1,20 +1,11 @@
-import logging
 import os
 import asyncio
-from io import BytesIO
-from vpn_bot.database import AsyncSessionLocal
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.helpers import escape_markdown
 from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, CallbackQueryHandler, MessageHandler, filters
-from sqlalchemy import select, update, or_, func as sa_func
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from vpn_bot.models import (
-    Server, Subscription, Profile, User, Transaction, AdminSetting, Admin, PaymentReceipt, OvpnConfig,
-    WireGuardInterface, WireGuardProfile, WireGuardSubscription, Ticket
-)
-from sqlalchemy.orm import joinedload
-from vpn_bot.mikrotik_manager import MikroTikManager, get_mikrotik_manager
+from vpn_bot.mikrotik_manager import get_mikrotik_manager
 from vpn_bot.admin_management import (
     is_user_admin,
     is_super_admin,
@@ -27,90 +18,34 @@ from vpn_bot.admin_management import (
     get_admin_permissions,
 )
 from vpn_bot.notification_manager import NotificationManager
-from vpn_bot.wallet_manager import WalletManager
 from vpn_bot.admin_audit import audit_log
-from vpn_bot.user_features import (
-    checkout_subscription,
-    finalize_wg_purchase,
-    format_transaction_summary,
-    _format_history_separators_rtl,
-)
-from vpn_bot.bot_handler import main_menu_text_dispatch, MENU_BUTTONS_FILTER
-from vpn_bot.admin_conversation import admin_exit_to_menu, build_admin_fallback_handlers
-from vpn_bot.conversation_controls import (
-    append_conv_footer,
-    conv_control_handlers,
-    is_conv_cancel,
-    merge_markup,
-)
+from vpn_bot.bot_handler import MENU_BUTTONS_FILTER
+from vpn_bot.admin_conversation import admin_exit_to_menu
 from vpn_bot.config import config
 from vpn_bot.utils import (
     logger,
     LanguageManager,
-    get_currency_unit,
     get_profile_price,
     format_currency,
-    format_datetime,
     safe_response,
-    clear_user_processing,
-    notify_user_busy,
 )
-from vpn_bot.wg_delivery import deliver_wg_config, deliver_wg_subscription_by_id
 from vpn_bot.admin_cleanup import AdminCleanup
 from vpn_bot.settings_utils import get_admin_setting
-from vpn_bot.admin_user_service import (
-    find_user_by_query, find_users_by_query, get_recent_users,
-    format_user_pick_label,
-    get_user_comprehensive_info, format_user_info_text, build_user_hub_keyboard,
-    user_hub_back_markup, get_user_transactions, get_user_receipts_summary,
-    update_user_balance, toggle_user_ban, delete_user_full, get_user_by_id,
-)
-from vpn_bot.admin_ticket_service import get_user_tickets
 from vpn_bot.admin_server_service import (
-    get_all_servers, get_server_health_status, get_multi_server_health,
+    get_multi_server_health,
     format_server_list_text, get_server_by_id, create_server,
     update_server, delete_server, toggle_server_status,
     get_server_upstream_interfaces, set_server_upstream_interface,
-    get_active_servers, get_servers_for_admin_list,
-)
-from vpn_bot.admin_subscription_service import (
-    extend_subscription_validity, reset_subscription_password,
-    add_subscription_data, toggle_subscription_status,
-    get_subscription_comprehensive_info, format_subscription_info_text,
-    delete_ovpn_subscription,
-)
-from vpn_bot.admin_receipt_service import (
-    count_pending_receipts,
-    get_pending_receipts_page,
-    approve_payment_receipt,
-    reject_payment_receipt,
-    get_receipt_with_user,
+    get_servers_for_admin_list,
 )
 from vpn_bot.admin_profile_service import (
-    get_all_profiles, get_profile_by_id, create_profile_full,
+    get_all_profiles, create_profile_full,
     update_profile, delete_profile_full
 )
-from vpn_bot.admin_wg_service import (
-    get_all_wg_profiles, get_wg_profile_by_id, create_wg_profile,
-    update_wg_profile, delete_wg_profile, get_all_wg_interfaces,
-    get_wg_subscription_for_config, get_wg_subscription_comprehensive_info,
-    format_wg_subscription_info_text,
-    delete_wg_subscription, extend_wg_subscription, add_wg_subscription_data,
-    toggle_wg_subscription_status,
-    update_wg_interface, get_wg_interface_details,
-    broadcast_interface_update, migrate_wg_interface_logic, apply_wg_automation,
-    apply_wg_automation_timed,
-    fetch_upstream_interfaces_timed,
-    fetch_routing_tables_timed,
-    fetch_address_list_names_timed,
-    delete_wg_interface, get_wg_subscription_count, create_wg_interface
-)
-from vpn_bot.admin_settings_service import get_custom_message, set_custom_message
 from vpn_bot.admin_ovpn_service import (
-    get_all_ovpn_configs, get_ovpn_config_by_id, create_ovpn_config, 
+    get_all_ovpn_configs, create_ovpn_config, 
     update_ovpn_config, delete_ovpn_config
 )
-from vpn_bot.admin_settings_service import get_payment_cards
 from vpn_bot.admin_shared_service import (
     get_default_shared_users, set_default_shared_users, 
     get_subscription_by_username, get_user_shared_count_from_mt, 

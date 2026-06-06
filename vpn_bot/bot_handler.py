@@ -2,26 +2,22 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.helpers import escape_markdown
 from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, CallbackQueryHandler, MessageHandler, filters
-from sqlalchemy import select, insert, and_, func
+from sqlalchemy import select, and_, func
 from sqlalchemy.orm import joinedload
-from datetime import datetime, timedelta
+from datetime import datetime
 import dotenv
 import os
 
 from vpn_bot.database import AsyncSessionLocal
 from vpn_bot.models import (
-    User, Subscription, Profile, PaymentReceipt, Server, OvpnConfig, AdminSetting,
-    WireGuardInterface, WireGuardProfile, WireGuardSubscription
+    User, Subscription, Profile, PaymentReceipt, Server, OvpnConfig, WireGuardSubscription
 )
 from vpn_bot.mikrotik_manager import MikroTikManager, get_mikrotik_manager
-from vpn_bot.wallet_manager import WalletManager
 from vpn_bot.config import config
 from vpn_bot.utils import (
     logger,
     rate_limit,
     safe_response,
-    validate_amount,
-    sanitize_username,
     LanguageManager,
     format_currency,
     get_currency_unit,
@@ -39,12 +35,8 @@ from vpn_bot.conversation_controls import (
     is_conv_cancel,
     legacy_cancel_handlers,
     merge_markup,
-    reply_conv_prompt,
 )
-import string
-import random
 import asyncio
-import json
 
 # States for ConversationHandler
 SELECT_SERVER, SELECT_PLAN, BUY_PLAN_CONFIRM, MANUAL_PAYMENT_PENDING = range(4)
@@ -331,7 +323,7 @@ async def show_config_submenu(update: Update, context: ContextTypes.DEFAULT_TYPE
             
         res_conf = await session.execute(
             select(OvpnConfig).where(
-                (OvpnConfig.server_id == sub.server_id) | (OvpnConfig.server_id == None)
+                (OvpnConfig.server_id == sub.server_id) | (OvpnConfig.server_id is None)
             )
         )
         configs = res_conf.scalars().all()
@@ -923,7 +915,7 @@ async def confirm_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_caption(caption=confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
         else:
             await query.edit_message_text(text=confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-    except Exception as e:
+    except Exception:
         # Fallback if edit fails (e.g. message too old)
         await query.message.reply_text(confirm_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
         
@@ -1209,7 +1201,7 @@ async def view_subscription_detail(update: Update, context: ContextTypes.DEFAULT
     days_left = (sub.expiry_date - datetime.now()).days if not is_expired else 0
     total_days = sub.profile.validity_days if sub.profile else 30
     
-    remaining_ux = LanguageManager.get('subs.remaining_days', left=days_left, total=total_days)
+    LanguageManager.get('subs.remaining_days', left=days_left, total=total_days)
     
     
     status_key = 'active' if info and info['status'] == 'active' else ('expired' if is_expired else 'deactive')
@@ -1334,7 +1326,6 @@ async def view_subscription_ovpn_file(update: Update, context: ContextTypes.DEFA
         ovpn = configs[0]
 
     # Check file existence before proceeding
-    import os
     file_path = ovpn.file_path
     if not os.path.isabs(file_path):
         file_path = os.path.join(os.getcwd(), file_path)
@@ -2071,7 +2062,7 @@ async def confirm_purchase_wg(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data['selected_wg_profile_id'] = plan_id
     
     async with AsyncSessionLocal() as session:
-        from vpn_bot.models import WireGuardProfile, WireGuardInterface
+        from vpn_bot.models import WireGuardProfile
         p_res = await session.execute(select(WireGuardProfile).where(WireGuardProfile.id == plan_id))
         profile = p_res.scalars().first()
         

@@ -56,7 +56,7 @@ def build_server_list_keyboard(servers, *, max_manage: int = 25) -> "InlineKeybo
 async def get_active_servers():
     """Fetch active servers from database."""
     async with AsyncSessionLocal() as session:
-        result = await session.execute(select(Server).where(Server.is_active == True))
+        result = await session.execute(select(Server).where(Server.is_active))
         return result.scalars().all()
 
 async def get_server_health_status(server: Server):

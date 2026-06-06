@@ -1,14 +1,12 @@
 import logging
-import asyncio
 from datetime import datetime, timedelta
 from sqlalchemy import select, delete, func, and_, or_
 from vpn_bot.database import AsyncSessionLocal
-from vpn_bot.models import User, Subscription, Transaction, PaymentReceipt, ReceiptNotification, Ticket, TicketMessage, Server
-from vpn_bot.mikrotik_manager import MikroTikManager
+from vpn_bot.models import User, Subscription, Transaction, PaymentReceipt, ReceiptNotification, Ticket, TicketMessage
 
 logger = logging.getLogger(__name__)
-from vpn_bot.settings_utils import get_admin_setting, set_admin_setting
-from vpn_bot.utils import LanguageManager, parse_duration_to_seconds
+from vpn_bot.settings_utils import get_admin_setting
+from vpn_bot.utils import parse_duration_to_seconds
 
 async def get_cleanup_thresholds():
     """Retrieve current cleanup thresholds from admin settings (returned in seconds)."""

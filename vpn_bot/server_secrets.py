@@ -76,7 +76,7 @@ async def validate_all_server_passwords(active_only: bool = True) -> list[dict]:
     async with AsyncSessionLocal() as session:
         q = select(Server)
         if active_only:
-            q = q.where(Server.is_active == True)
+            q = q.where(Server.is_active)
         servers = (await session.execute(q)).scalars().all()
         for s in servers:
             ok, _ = try_decrypt_stored(s._password)

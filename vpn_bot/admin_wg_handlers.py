@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from io import BytesIO
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.helpers import escape_markdown
@@ -14,7 +13,6 @@ from sqlalchemy import select
 from vpn_bot.database import AsyncSessionLocal
 from telegram.ext import (
     CallbackQueryHandler,
-    CommandHandler,
     ContextTypes,
     ConversationHandler,
     MessageHandler,
@@ -23,16 +21,12 @@ from telegram.ext import (
 
 from vpn_bot.admin_conversation import admin_exit_to_menu
 from vpn_bot.admin_wg_service import (
-    add_wg_subscription_data,
-    apply_wg_automation,
     apply_wg_automation_timed,
     broadcast_interface_update,
     create_wg_interface,
     create_wg_profile,
     delete_wg_interface,
     delete_wg_profile,
-    delete_wg_subscription,
-    extend_wg_subscription,
     fetch_address_list_names_timed,
     fetch_routing_tables_timed,
     fetch_upstream_interfaces_timed,
@@ -40,22 +34,21 @@ from vpn_bot.admin_wg_service import (
     get_all_wg_profiles,
     get_wg_interface_details,
     get_wg_profile_by_id,
-    get_wg_subscription_comprehensive_info,
     get_wg_subscription_count,
-    get_wg_subscription_for_config,
     migrate_wg_interface_logic,
-    toggle_wg_subscription_status,
     update_wg_interface,
     update_wg_profile,
 )
 from vpn_bot.bot_handler import MENU_BUTTONS_FILTER
-from vpn_bot.config import config
 from vpn_bot.conversation_controls import is_conv_cancel
-from vpn_bot.mikrotik_manager import MikroTikManager, get_mikrotik_manager
-from vpn_bot.models import Server, WireGuardInterface, WireGuardProfile
-from vpn_bot.utils import LanguageManager, format_currency, get_profile_price, safe_response, clear_user_processing
+from vpn_bot.mikrotik_manager import get_mikrotik_manager
+from vpn_bot.models import WireGuardInterface
+from vpn_bot.admin_server_service import get_server_by_id, get_servers_for_admin_list
+from vpn_bot.admin_settings_service import get_custom_message, set_custom_message
+from vpn_bot.admin_user_service import find_user_by_query
+from vpn_bot.utils import LanguageManager, format_currency, get_profile_price, safe_response, clear_user_processing, notify_user_busy
 from vpn_bot.admin_profile_service import update_profile, get_profile_by_id
-from vpn_bot.wg_delivery import deliver_wg_config, deliver_wg_subscription_by_id
+from vpn_bot.admin_panel_shared import show_user_hub
 
 from vpn_bot.admin_panel_shared import (
     WG_ADD_INT_MAN_ADDR,
@@ -79,7 +72,6 @@ from vpn_bot.admin_panel_shared import (
     WG_INT_ADDRESS,
     WG_INT_DNS,
     WG_INT_ENDPOINT,
-    WG_INT_GATEWAY,
     WG_INT_KEEPALIVE,
     WG_INT_MAX_USERS,
     WG_INT_MTU,
@@ -248,7 +240,6 @@ async def _wg_apply_heartbeat(
     interval: float = 15.0,
 ) -> None:
     """Refresh loading message while MikroTik apply is in progress."""
-    import os
 
     max_retries = int(os.getenv("MIKROTIK_APPLY_RETRIES", "3"))
     attempt = 1
@@ -2691,7 +2682,6 @@ async def edit_speed_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile_id = int(query.data.split('_')[2])
     await query.answer()
     
-    from vpn_bot.admin_profile_service import get_profile_by_id
     profile = await get_profile_by_id(profile_id)
     if not profile: return ConversationHandler.END
     context.user_data['edit_profile_id'] = profile_id
@@ -2790,7 +2780,7 @@ async def get_wg_interface_server(update: Update, context: ContextTypes.DEFAULT_
         res = await session.execute(
             select(WireGuardInterface).where(
                 WireGuardInterface.server_id == server_id,
-                WireGuardInterface.is_active == True,
+                WireGuardInterface.is_active,
             )
         )
         existing_ifaces_db = list(res.scalars().all())
@@ -2801,7 +2791,7 @@ async def get_wg_interface_server(update: Update, context: ContextTypes.DEFAULT_
             res = await session.execute(
                 select(WireGuardInterface).where(
                     WireGuardInterface.server_id == server_id,
-                    WireGuardInterface.is_active == True,
+                    WireGuardInterface.is_active,
                 )
             )
             existing_ifaces_db = list(res.scalars().all())
@@ -2854,7 +2844,7 @@ async def get_wg_interface_server(update: Update, context: ContextTypes.DEFAULT_
             select(WireGuardInterface)
             .where(
                 WireGuardInterface.server_id == server.id,
-                WireGuardInterface.is_active == True,
+                WireGuardInterface.is_active,
             )
             .order_by(WireGuardInterface.id.asc())
             .limit(1)

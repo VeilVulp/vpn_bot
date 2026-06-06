@@ -1,5 +1,5 @@
 import asyncio
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from vpn_bot.database import AsyncSessionLocal
 from vpn_bot.models import Server, Subscription, WireGuardSubscription, WireGuardInterface, AdminSetting
@@ -284,7 +284,7 @@ class SyncManager:
 
         # 1. Fetch active servers first
         async with AsyncSessionLocal() as session:
-            res = await session.execute(select(Server).where(Server.is_active == True))
+            res = await session.execute(select(Server).where(Server.is_active))
             servers = res.scalars().all()
             server_ids = [s.id for s in servers]
         

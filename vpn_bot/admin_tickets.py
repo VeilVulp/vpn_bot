@@ -5,18 +5,14 @@ Handles admin responses to support tickets.
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.helpers import escape_markdown
-from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters, CallbackQueryHandler, CommandHandler
-from sqlalchemy import select, desc, and_
-from datetime import datetime
+from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters, CallbackQueryHandler
 
 from vpn_bot.admin_ticket_service import (
     get_tickets_by_filter, get_ticket_comprehensive, add_ticket_message,
     close_ticket, search_tickets_by_user, create_outbound_ticket,
-    get_ticket_notif_mode, set_ticket_notif_mode
+    set_ticket_notif_mode
 )
 from vpn_bot.admin_user_service import get_user_by_tg_id
-from vpn_bot.models import User
-from vpn_bot.config import config
 from vpn_bot.utils import LanguageManager, format_datetime, safe_response
 from vpn_bot.bot_handler import MENU_BUTTONS_FILTER, main_menu_text_dispatch
 from vpn_bot.admin_conversation import admin_exit_to_menu, build_admin_fallback_handlers
@@ -530,7 +526,6 @@ async def admin_create_ticket_msg_received(update: Update, context: ContextTypes
     context.user_data.clear()
     return await admin_ticket_menu(update, context)
 
-from vpn_bot.bot_handler import main_menu_text_dispatch
 # --- Conversation Handler ---
 
 admin_ticket_handler = ConversationHandler(

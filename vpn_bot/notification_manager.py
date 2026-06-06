@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import List
 from telegram import Bot
 from telegram.error import TelegramError, Forbidden, RetryAfter
 from sqlalchemy import select
@@ -34,7 +33,7 @@ class NotificationManager:
     async def broadcast_to_all(self, message: str, parse_mode: str = 'Markdown', *, batch_size: int = 25) -> dict:
         """Send a message to all active users in batches to respect Telegram limits."""
         async with AsyncSessionLocal() as session:
-            result = await session.execute(select(User).where(User.is_active == True))
+            result = await session.execute(select(User).where(User.is_active))
             users = result.scalars().all()
             
         total = len(users)

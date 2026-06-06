@@ -29,7 +29,7 @@ async def sales_dashboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from datetime import timedelta
     now = datetime.now()
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    month_start = today_start - timedelta(days=30)
+    today_start - timedelta(days=30)
     # Actually simpler to just pass dates from service if needed, but let's stick to the current logic
 
     total_rev_map = await get_revenue_stats()

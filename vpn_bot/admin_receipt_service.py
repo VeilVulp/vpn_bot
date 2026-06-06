@@ -6,7 +6,7 @@ from sqlalchemy import select, func
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest, Forbidden
 from vpn_bot.database import AsyncSessionLocal
-from vpn_bot.models import PaymentReceipt, ReceiptNotification, User, Transaction
+from vpn_bot.models import PaymentReceipt, ReceiptNotification, User
 from vpn_bot.utils import LanguageManager, format_currency
 
 logger = logging.getLogger("vpn_bot.admin_receipt")

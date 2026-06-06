@@ -13,8 +13,6 @@ logging.basicConfig(
 logger = logging.getLogger("vpn_bot")
 from vpn_bot.backup_manager import BackupManager
 from vpn_bot.handler_registry import register_all_handlers
-from vpn_bot.support_tickets import set_support_group
-from vpn_bot.bot_handler import set_backup_group
 
 async def post_init(application):
     """Start background tasks."""
